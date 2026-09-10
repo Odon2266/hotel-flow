@@ -19,37 +19,87 @@ enum RoomStatus {
   MAINTENANCE
 }
 
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
 model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  password  String
-  name      String
-  role      Role      @default(CLIENT)
-  bookings  Booking[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  name          String
+  role          Role           @default(CLIENT)
+  bookings      Booking[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
 model Room {
-  id            String     @id @default(uuid())
-  number        String     @unique
-  type          String     // Ex: Single, Double, Suite
+  id            String       @id @default(uuid())
+  number        String       @unique
+  type          String       // Simple, Double, Suite, VIP
   pricePerNight Float
-  status        RoomStatus @default(AVAILABLE)
+  status        RoomStatus   @default(AVAILABLE)
   bookings      Booking[]
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 }
 
 model Booking {
+  id                  String               @id @default(uuid())
+  userId              String
+  roomId              String
+  checkIn             DateTime
+  checkOut            DateTime
+  totalPrice          Float
+  user                User                 @relation(fields: [userId], references: [id])
+  room                Room                 @relation(fields: [roomId], references: [id])
+  services            ReservationService[]
+  activities          ReservationActivity[]
+  payment             Payment?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+}
+
+model Service {
+  id                  String               @id @default(uuid())
+  name                String
+  price               Float
+  reservationServices ReservationService[]
+}
+
+model ReservationService {
+  id        String   @id @default(uuid())
+  bookingId String
+  serviceId String
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  service   Service  @relation(fields: [serviceId], references: [id])
+}
+
+model Activity {
+  id                    String                 @id @default(uuid())
+  name                  String
+  price                 Float
+  reservationActivities ReservationActivity[]
+}
+
+model ReservationActivity {
   id         String   @id @default(uuid())
-  userId     String
-  roomId     String
-  checkIn    DateTime
-  checkOut   DateTime
-  totalPrice Float
-  user       User     @relation(fields: [userId], references: [id])
-  room       Room     @relation(fields: [roomId], references: [id])
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  bookingId  String
+  activityId String
+  booking    Booking  @relation(fields: [bookingId], references: [id])
+  activity   Activity @relation(fields: [activityId], references: [id])
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  bookingId     String        @unique
+  stripeSession String?       @unique
+  amount        Float
+  status        PaymentStatus @default(PENDING)
+  booking       Booking       @relation(fields: [bookingId], references: [id])
+  createdAt     DateTime      @default(now())
 }
