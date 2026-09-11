@@ -3,9 +3,7 @@ import Stripe from 'stripe';
 
 @Injectable()
 export class PaymentsService {
-  private stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy', {
-    apiVersion: '2025-08-27.acacia' as any,
-  });
+  private stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy');
 
   async createCheckoutSession(bookingId: string, amount: number, userEmail: string) {
     if (!process.env.STRIPE_SECRET_KEY) {
