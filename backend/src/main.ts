@@ -3,7 +3,8 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Ajout de rawBody: true pour permettre la vérification de la signature Stripe Webhook
+  const app = await NestFactory.create(AppModule, { rawBody: true });
 
   // Autoriser le frontend Next.js à communiquer avec le backend
   app.enableCors({
