@@ -9,27 +9,37 @@ export class RoomsService {
 
   async create(createRoomDto: CreateRoomDto) {
     return this.prisma.room.create({
-      data: createRoomDto as any,
+      data: {
+        number: createRoomDto.number,
+        type: createRoomDto.type,
+        price: createRoomDto.pricePerNight,
+        imageUrl: createRoomDto.imageUrl,
+      },
     });
   }
 
   async findAll() {
     return this.prisma.room.findMany({
-      include: { bookings: true },
+      include: { reservations: true }, // Corrigé de 'bookings' à 'reservations'
     });
   }
 
   async findOne(id: string) {
     return this.prisma.room.findUnique({
       where: { id },
-      include: { bookings: true },
+      include: { reservations: true }, // Corrigé de 'bookings' à 'reservations'
     });
   }
 
   async update(id: string, updateRoomDto: UpdateRoomDto) {
     return this.prisma.room.update({
       where: { id },
-      data: updateRoomDto as any,
+      data: {
+        ...(updateRoomDto.number && { number: updateRoomDto.number }),
+        ...(updateRoomDto.type && { type: updateRoomDto.type }),
+        ...(updateRoomDto.pricePerNight !== undefined && { price: updateRoomDto.pricePerNight }),
+        ...(updateRoomDto.imageUrl !== undefined && { imageUrl: updateRoomDto.imageUrl }),
+      },
     });
   }
 
