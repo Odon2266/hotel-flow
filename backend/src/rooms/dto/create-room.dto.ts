@@ -15,5 +15,9 @@ export class CreateRoomDto {
 
   @IsString()
   @IsOptional()
-  imageUrl?: string; // Champ pour stocker l'URL de la photo de la chambre
+  imageUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  status?: string; // Autorise le statut (AVAILABLE / OCCUPIED)
 }
