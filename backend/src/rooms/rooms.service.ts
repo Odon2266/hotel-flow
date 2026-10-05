@@ -41,7 +41,7 @@ export class RoomsService {
         ...(updateRoomDto.type && { type: updateRoomDto.type }),
         ...(updateRoomDto.pricePerNight !== undefined && { price: updateRoomDto.pricePerNight }),
         ...(updateRoomDto.imageUrl !== undefined && { imageUrl: updateRoomDto.imageUrl }),
-        ...(updateRoomDto.status !== undefined && { status: updateRoomDto.status as RoomStatus }), // <-- INDISPENSABLE pour mettre à jour le statut
+        ...(updateRoomDto.status !== undefined && { status: updateRoomDto.status as RoomStatus }),
       },
     });
   }

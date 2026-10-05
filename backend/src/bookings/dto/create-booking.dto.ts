@@ -1,18 +1,19 @@
-import { IsString, IsNumber, IsDateString } from 'class-validator';
+import { IsString, IsDateString, IsNumber, IsOptional } from 'class-validator';
 
 export class CreateBookingDto {
   @IsString()
-  userId: string;
+  userId!: string;
 
   @IsString()
-  roomId: string;
+  roomId!: string;
 
   @IsDateString()
-  checkIn: string;
+  checkIn!: string;
 
   @IsDateString()
-  checkOut: string;
+  checkOut!: string;
 
   @IsNumber()
-  totalPrice: number;
+  @IsOptional()
+  totalPrice?: number; // Optionnel car calculé automatiquement par le backend
 }
