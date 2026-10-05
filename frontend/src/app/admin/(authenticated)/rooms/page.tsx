@@ -122,17 +122,14 @@ export default function AdminRoomsPage() {
       const method = editingId ? 'PATCH' : 'POST';
       const parsedPrice = Number(pricePerNight);
 
-      // On envoie uniquement pricePerNight (et status si le DTO l'autorise)
+      // On envoie le statut à chaque fois (AVAILABLE ou OCCUPIED)
       const payload: any = {
         number: number.trim(),
         type: type.trim(),
         pricePerNight: parsedPrice,
         imageUrl: imageUrl.trim() || undefined,
+        status: status,
       };
-
-      if (editingId) {
-        payload.status = status;
-      }
 
       const res = await fetch(url, {
         method,
@@ -279,19 +276,17 @@ export default function AdminRoomsPage() {
               </div>
             </div>
 
-            {editingId && (
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Statut</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3.5 text-sm text-slate-900 bg-slate-50/50 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all"
-                >
-                  <option value="AVAILABLE">Disponible</option>
-                  <option value="OCCUPIED">Occupée</option>
-                </select>
-              </div>
-            )}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Statut</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3.5 text-sm text-slate-900 bg-slate-50/50 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all"
+              >
+                <option value="AVAILABLE">Disponible</option>
+                <option value="OCCUPIED">Occupée</option>
+              </select>
+            </div>
 
             <div className="space-y-3">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">Photo de la chambre</label>
@@ -362,6 +357,7 @@ export default function AdminRoomsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {rooms.map((room) => {
                 const displayPrice = room.pricePerNight ?? room.price ?? 0;
+                const isAvailable = room.status === 'AVAILABLE' || room.status === 'DISPONIBLE';
                 return (
                   <div key={room.id} className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-all group flex flex-col justify-between">
                     
@@ -403,12 +399,12 @@ export default function AdminRoomsPage() {
                         <p className="text-sm font-bold text-blue-600 mt-0.5">{displayPrice} $ <span className="text-xs font-normal text-slate-400">/ nuit</span></p>
                       </div>
                       <span className={`inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold ${
-                        room.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                        isAvailable ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
                       }`}>
                         <span className={`h-1.5 w-1.5 rounded-full mr-1.5 ${
-                          room.status === 'AVAILABLE' ? 'bg-emerald-500' : 'bg-amber-500'
+                          isAvailable ? 'bg-emerald-500' : 'bg-amber-500'
                         }`}></span>
-                        {room.status === 'AVAILABLE' ? 'DISPONIBLE' : 'OCCUPÉE'}
+                        {isAvailable ? 'DISPONIBLE' : 'OCCUPÉE'}
                       </span>
                     </div>
 
