@@ -18,6 +18,11 @@ interface Room {
 export default function Home() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [activeTab, setActiveTab] = useState<'chambres' | 'offres' | 'activites' | 'services'>('chambres');
+  
+  // États pour les dates de réservation et le chargement du paiement
+  const [checkIn, setCheckIn] = useState('');
+  const [checkOut, setCheckOut] = useState('');
+  const [loadingRoomId, setLoadingRoomId] = useState<string | null>(null);
 
   const fetchRooms = async () => {
     try {
@@ -31,6 +36,37 @@ export default function Home() {
   useEffect(() => {
     fetchRooms();
   }, []);
+
+  // Fonction de gestion de la réservation et redirection Stripe
+  const handleBooking = async (roomId: string) => {
+    if (!checkIn || !checkOut) {
+      alert("Veuillez sélectionner une date d'arrivée et de départ dans la barre de recherche en haut.");
+      return;
+    }
+
+    try {
+      setLoadingRoomId(roomId);
+      // Remplace par ton vrai userId récupéré de Prisma Studio pour tes tests
+      const userId = "fd9d7fa0-d333-8b05-b91c-c98e7e08f424"; 
+
+      const data = await api.createBooking({
+        userId,
+        roomId,
+        checkIn,
+        checkOut,
+      });
+
+      if (data.checkoutUrl) {
+        // Redirection automatique vers la page de paiement sécurisée Stripe
+        window.location.href = data.checkoutUrl;
+      }
+    } catch (err) {
+      console.error('Erreur lors de la réservation', err);
+      alert("Impossible d'initier le paiement.");
+    } finally {
+      setLoadingRoomId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
@@ -106,9 +142,25 @@ export default function Home() {
           {/* Barre de Recherche */}
           <div className="pt-6">
             <div className="bg-white p-3 rounded-2xl shadow-2xl text-slate-800 grid grid-cols-1 md:grid-cols-4 gap-3 border border-slate-100">
-              <div className="p-3 text-left border-r border-slate-100">
-                <label className="block text-xs font-bold text-blue-600 uppercase tracking-wider">Arrivée - Départ</label>
-                <input type="date" className="w-full text-sm font-semibold focus:outline-none mt-1 text-slate-700" />
+              <div className="p-3 text-left border-r border-slate-100 flex gap-2">
+                <div className="w-1/2">
+                  <label className="block text-xs font-bold text-blue-600 uppercase tracking-wider">Arrivée</label>
+                  <input 
+                    type="date" 
+                    value={checkIn}
+                    onChange={(e) => setCheckIn(e.target.value)}
+                    className="w-full text-xs font-semibold focus:outline-none mt-1 text-slate-700" 
+                  />
+                </div>
+                <div className="w-1/2">
+                  <label className="block text-xs font-bold text-blue-600 uppercase tracking-wider">Départ</label>
+                  <input 
+                    type="date" 
+                    value={checkOut}
+                    onChange={(e) => setCheckOut(e.target.value)}
+                    className="w-full text-xs font-semibold focus:outline-none mt-1 text-slate-700" 
+                  />
+                </div>
               </div>
               <div className="p-3 text-left border-r border-slate-100">
                 <label className="block text-xs font-bold text-blue-600 uppercase tracking-wider">Voyageurs</label>
@@ -201,8 +253,16 @@ export default function Home() {
                         Wi-Fi Haut Débit • Lit King Size • Climatisation • Room Service
                       </p>
 
-                      <button className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl text-sm transition shadow-lg shadow-blue-600/20 active:scale-[0.98]">
-                        Réserver cette chambre
+                      <button
+                        onClick={() => handleBooking(room.id)}
+                        disabled={!isAvailable || loadingRoomId === room.id}
+                        className={`w-full py-3 font-semibold rounded-2xl text-sm transition shadow-lg ${
+                          isAvailable
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/20 active:scale-[0.98]'
+                            : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                        }`}
+                      >
+                        {loadingRoomId === room.id ? 'Redirection...' : 'Réserver cette chambre'}
                       </button>
                     </div>
                   </div>
