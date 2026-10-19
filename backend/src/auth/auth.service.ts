@@ -59,6 +59,26 @@ export class AuthService {
     return this.generateToken(user.id, user.email, user.role);
   }
 
+  async validateGoogleUser(googleUser: { email: string; firstName: string; lastName: string }) {
+    // 1. Vérifier si l'utilisateur existe déjà via son email Google
+    let user = await this.prisma.user.findUnique({
+      where: { email: googleUser.email },
+    });
+
+    if (!user) {
+      user = await this.prisma.user.create({
+        data: {
+          email: googleUser.email,
+          name: `${googleUser.firstName} ${googleUser.lastName}`,
+          password: '', // Pas de mot de passe requis pour un compte Google
+        },
+      });
+    }
+
+    // 3. Générer et retourner le token JWT
+    return this.generateToken(user.id, user.email, user.role);
+  }
+
   private async generateToken(userId: string, email: string, role: string) {
     const payload = { sub: userId, email, role };
     const token = await this.jwtService.signAsync(payload);
