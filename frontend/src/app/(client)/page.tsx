@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '@/services/api';
 import Footer from '@/components/Footer';
 
@@ -16,6 +17,14 @@ interface Room {
 }
 
 export default function Home() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // États pour l'authentification et l'utilisateur connecté
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
+
+  // États existants
   const [rooms, setRooms] = useState<Room[]>([]);
   const [activeTab, setActiveTab] = useState<'chambres' | 'offres' | 'activites' | 'services'>('chambres');
   
@@ -23,6 +32,37 @@ export default function Home() {
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
   const [loadingRoomId, setLoadingRoomId] = useState<string | null>(null);
+
+  // 🛡️ 1. Vérification de la connexion et récupération du Token Google
+  useEffect(() => {
+    // Cas A : L'utilisateur revient de Google OAuth avec un token dans l'URL
+    const urlToken = searchParams.get('token');
+    if (urlToken) {
+      localStorage.setItem('token', urlToken);
+      router.replace('/'); // Nettoyer l'URL
+    }
+
+    // Cas B : Vérification du token enregistré
+    const token = localStorage.getItem('token');
+    if (!token) {
+      // Redirection obligatoire vers la connexion si pas de token
+      router.push('/login');
+    } else {
+      try {
+        // Décoder le token JWT pour obtenir le vrai userId (payload en base64)
+        const payloadBase64 = token.split('.')[1];
+        const decodedPayload = JSON.parse(atob(payloadBase64));
+        
+        setUser({ id: decodedPayload.sub, email: decodedPayload.email });
+        setIsAuthorized(true);
+        fetchRooms();
+      } catch (e) {
+        // En cas de token invalide/expiré
+        localStorage.removeItem('token');
+        router.push('/login');
+      }
+    }
+  }, [router, searchParams]);
 
   const fetchRooms = async () => {
     try {
@@ -33,10 +73,6 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
-    fetchRooms();
-  }, []);
-
   // Fonction de gestion de la réservation et redirection Stripe
   const handleBooking = async (roomId: string) => {
     if (!checkIn || !checkOut) {
@@ -44,13 +80,17 @@ export default function Home() {
       return;
     }
 
+    if (!user?.id) {
+      alert("Session expirée. Veuillez vous re-connecter.");
+      router.push('/login');
+      return;
+    }
+
     try {
       setLoadingRoomId(roomId);
-      // Remplace par ton vrai userId récupéré de Prisma Studio pour tes tests
-      const userId = "fd9d7fa0-d333-8b05-b91c-c98e7e08f424"; 
 
       const data = await api.createBooking({
-        userId,
+        userId: user.id, // Utilisation du vrai userId extrait du token
         roomId,
         checkIn,
         checkOut,
@@ -67,6 +107,21 @@ export default function Home() {
       setLoadingRoomId(null);
     }
   };
+
+  // Déconnexion de l'utilisateur
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    router.push('/login');
+  };
+
+  // Écran de chargement temporaire pendant la vérification de sécurité
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <p className="text-slate-500 font-medium animate-pulse">Vérification de la connexion...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
@@ -120,10 +175,16 @@ export default function Home() {
             </button>
           </nav>
 
-          {/* Actions Utilisateur (Profil) */}
+          {/* Actions Utilisateur & Bouton Déconnexion */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-blue-600 flex items-center justify-center font-bold text-slate-700 shadow-sm">
-              OF
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 border border-slate-200 text-slate-600 font-semibold text-xs rounded-xl hover:bg-slate-50 transition"
+            >
+              Déconnexion
+            </button>
+            <div className="w-10 h-10 rounded-full bg-blue-100 border-2 border-blue-600 flex items-center justify-center font-bold text-blue-700 shadow-sm text-sm">
+              {user?.email ? user.email.slice(0, 2).toUpperCase() : 'HF'}
             </div>
           </div>
         </div>
